@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Free Covid-19 Data</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    </head>
+
+    <body>
+        <div class="container-fluid">
+            <div class="row">
+
+                <h1 class="display-4 text-center">Visual Analyzer on open COVID-19 Data</h1>
+                <figure class="text-center">
+                    <blockquote class="blockquote display-6">
+                      <p>Data is the new science.</p>
+                    </blockquote>
+                    <figcaption class="blockquote-footer">
+                      Pat Gelsinger, <cite title="Source Title">CEO, Intel Corp.</cite>
+                    </figcaption>
+                </figure>
+            </div>
+        
+            
+            <!-- Analyzer -->
+            <div class="row row-cols-3">
+
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header">
+                            Filter
+                        </div>
+
+                        <div class="card-body" style="height: 400px;">
+                            <form class="row">
+                                <div class="col-auto">
+                                    <label for="datefrom">Select Date from</label>
+                                    <input type="date" class="form-control" id="datefrom">
+                                </div>
+                                <div class="col-auto">
+                                    <label for="dateto">Select Date to</label>
+                                    <input type="date" class="form-control" id="dateto">
+                                </div>
+                            </form>
+                            <form class="row" style="margin-top: 20px;">
+                                <div class="col-auto">
+                                    <label for="graphType">Select Type of Graph</label>
+                                    <select name="graphType" id="graphType" class="form-select">
+                                        <option value="bar">Bar</option>
+                                        <option value="column">Column</option>
+                                        <option value="pie">Pie</option>
+                                    </select>
+                                </div>
+                            </form>
+                            <br />
+                            <input type="button" class="btn btn-outline-primary" id="compareBtn" name="compareBtn" value="Compare" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header">
+                            Showing 192 Countries
+                        </div>
+                        <div class="card-body" style="height: 400px;">
+                            <h5 class="card-title">Diclaimer:</h5>
+                            <p class="card-text">This real-time data is subject to updation process from open Covid-19 Data lakes around the world.</p>
+                            <br />
+                            <div style="height: 250px; overflow-y: scroll;">
+                                <table class="table table-responsive table-hover">
+                                    <thead class="border border-1 border-dark">
+                                        <tr>
+                                            <th></th>
+                                            <th class="text-center border-1">Sl. No.</th>
+                                            <th class="border-1">Country</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="countryTab"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header">
+                            Analysis
+                        </div>
+                        <div class="card-body" style="height: 400px; overflow-y: scroll;">
+                            <table class="table table-responsive table-hover">
+                                <thead class="text-center border border-1 border-dark">
+                                    <tr>
+                                        <th rowspan="2" class="border-1">Country</th>
+                                        <th colspan="3">Total Confirmed</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="border-1">Cases</th>
+                                        <th class="border-1">Deaths</th>
+                                        <th class="border-1">Recovery</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dataTab" class="border-1 border-dark">
+                                    <tr><td colspan="4" class="text-center">Select a country to view more information</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualizer -->
+            <div class="row row-cols-3" style="margin-top: 30px;">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body" id="casesChart" style="height: 400px; overflow: hidden; padding: 10px;">
+                            
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body" id="deathsChart" style="height: 400px; overflow: hidden; padding: 10px;">
+                            
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body" id="recoveriesChart" style="height: 400px; overflow: hidden; padding: 10px;">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <br />
+            <br />
+
+        </div> <!-- end of container -->
+
+        <script src="assets/jquery-3.3.1.min.js"></script>
+        <!-- <script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script> -->
+        <script type="text/javascript" src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+        <script>
+            var num, datefrom="", dateto="", retData="";
+            var selNewCases = [], selNewDeaths = [], selNewRecoveries = [];
+
+            $(document).ready(function(){
+                retData = loadData("https://api.covid19api.com/summary");
+
+                retData.done(function(response) {
+                    $.each(response.Countries, function(key, val) {
+                        num = parseInt(key) + 1;
+                        if(val.NewConfirmed == 0 && val.NewDeaths == 0 && val.NewRecovered == 0) {
+                            var badge = "<small><span class='badge rounded-pill bg-danger'> Data not updated </span></small>";
+                        } else {
+                            var badge = "<small> &#10004; </small>";
+                        }
+
+                        $("#countryTab").append("<tr>" +
+                                                    "<td class='text-center border-1 border-dark'><input type='checkbox' class='country' name='selectedCountries[]' data-slug='" + val.Slug + "'  data-newcases='" + val.TotalConfirmed + "' data-newdeaths='" + val.TotalDeaths + "' data-newrecovery='" + val.TotalRecovered + "' data-country='" + val.Country + "' /></td>" +
+                                                    "<td class='text-center border-1 border-dark'>" + num + "</td>" +
+                                                    "<td class='border-1 border-dark'>" + val.Country + " " + badge + "</td>" +
+                                                "</tr>");
+                    });
+                });
+            });
+
+            function loadData(url) {
+                return $.ajax({
+                    url: url,
+                    dataType: "json",
+                    method: "GET"
+                });
+            }
+
+            $(document).on('click', '#compareBtn', function() {
+                selNewCases.length = 0;
+                selNewDeaths.length = 0;
+                selNewRecoveries.length = 0;
+                $("#dataTab").html("");
+
+                if( ($("#datefrom").val()) && ($("#dateto").val()) ) {
+                    datefrom = $("#datefrom").val()+"T00:00:00Z";
+                    dateto = $("#dateto").val()+"T00:00:00Z";
+                    
+                    $('.country:checked').each(function() {
+                        var confirmed = 0, deaths = 0, recovered = 0;
+                        $("#dataTab").append("<tr>" +
+                                                "<td class='text-center border-1'>" + $(this).attr('data-country') + "</td>" +
+                                                "<td class='text-center border-1' id='confirm" + $(this).attr('data-country') + "'></td>" +
+                                                "<td class='text-center border-1' id='death" + $(this).attr('data-country') + "'></td>" +
+                                                "<td class='text-center border-1' id='recovery" + $(this).attr('data-country') + "'></td>" +
+                                            "</tr>");
+
+                        retData1 = loadData("https://api.covid19api.com/country/"+$(this).attr('data-slug')+"/status/confirmed?from="+datefrom+"&to="+dateto);
+                        retData1.done(function(response) {
+                            $.each(response, function(key, val) { 
+                                confirmed += parseInt(val.Cases);
+                            });
+                            
+                            $('#confirm'+response[0].Country).html(confirmed);
+                            selNewCases.push({'label': response[0].Country, 'y': parseInt(confirmed)});
+                        });
+
+                        retData2 = loadData("https://api.covid19api.com/country/"+$(this).attr('data-slug')+"/status/deaths?from="+datefrom+"&to="+dateto);
+                        retData2.done(function(response) {
+                            $.each(response, function(key, val) { 
+                                deaths += parseInt(val.Cases);
+                            });
+                            
+                            $('#death'+response[0].Country).html(deaths);
+                            selNewDeaths.push({'label': response[0].Country, 'y': parseInt(deaths)});
+                        });
+
+                        retData3 = loadData("https://api.covid19api.com/country/"+$(this).attr('data-slug')+"/status/recovered?from="+datefrom+"&to="+dateto);
+                        retData3.done(function(response) {
+                            $.each(response, function(key, val) { 
+                                recovered += parseInt(val.Cases);
+                            });
+                            
+                            $('#recovery'+response[0].Country).html(recovered);
+                            selNewRecoveries.push({'label': response[0].Country, 'y': parseInt(recovered)});
+                        });
+                    });
+
+                    loadcharts(selNewCases, selNewDeaths, selNewRecoveries);
+                } else {
+                    mon = parseInt(new Date().getMonth()) + 1;
+                    yr = new Date().getFullYear();
+                    dtf = parseInt(new Date().getDate()) - 1;
+                    dtt = new Date().getDate();
+                    datefrom = yr+"-"+mon+"-"+dtf+"T00:00:00Z";
+                    dateto = yr+"-"+mon+"-"+dtt+"T00:00:00Z";
+
+                    $('.country:checked').each(function() {
+                        var confirmed = 0, deaths = 0, recovered = 0;
+                        $("#dataTab").append("<tr>" +
+                                                "<td class='text-center border-1'>" + $(this).attr('data-country') + "</td>" +
+                                                "<td class='text-center border-1' id='confirm" + $(this).attr('data-country') + "'></td>" +
+                                                "<td class='text-center border-1' id='death" + $(this).attr('data-country') + "'></td>" +
+                                                "<td class='text-center border-1' id='recovery" + $(this).attr('data-country') + "'></td>" +
+                                            "</tr>");
+
+                        retData1 = loadData("https://api.covid19api.com/country/"+$(this).attr('data-slug')+"/status/deaths?from="+datefrom+"&to="+dateto);
+                        retData1.done(function(response) {
+                            $.each(response, function(key, val) { 
+                                confirmed += parseInt(val.Cases);
+                            });
+                            
+                            $('#confirm'+response[0].Country).html(confirmed);
+                            selNewCases.push({'label': response[0].Country, 'y': parseInt(confirmed)});
+                        });
+
+                        retData2 = loadData("https://api.covid19api.com/country/"+$(this).attr('data-slug')+"/status/deaths?from="+datefrom+"&to="+dateto);
+                        retData2.done(function(response) {                            
+                            $.each(response, function(key, val) { 
+                                deaths += parseInt(val.Cases);
+                            });
+                            
+                            $('#death'+response[0].Country).html(deaths);
+                            selNewDeaths.push({'label': response[0].Country, 'y': parseInt(deaths)});
+                        });
+
+                        retData3 = loadData("https://api.covid19api.com/country/"+$(this).attr('data-slug')+"/status/recovered?from="+datefrom+"&to="+dateto);
+                        retData3.done(function(response) {                            
+                            $.each(response, function(key, val) { 
+                                recovered += parseInt(val.Cases);
+                            });
+                            
+                            $('#recovery'+response[0].Country).html(recovered);
+                            selNewRecoveries.push({'label': response[0].Country, 'y': parseInt(recovered)});
+                        });
+                    });
+
+                    loadcharts(selNewCases, selNewDeaths, selNewRecoveries);
+                }
+            });
+
+            function loadcharts(selNewCases, selNewDeaths, selNewRecoveries) {
+                //Better to construct options first and then pass it as a parameter
+                var newcases = {
+                    title: {
+                        text: "Total Confirmed Cases"              
+                    },
+                    animationEnabled: false,
+                    parsing: false,
+                    data: [              
+                        {
+                            type: $("#graphType").val(),
+                            dataPoints: selNewCases
+                        }
+                    ]
+                };
+
+                var newdeaths = {
+                    title: {
+                        text: "Total Confirmed Deaths"              
+                    },
+                    animationEnabled: false,
+                    parsing: false,
+                    data: [              
+                        {
+                            type: $("#graphType").val(),
+                            dataPoints: selNewDeaths
+                        }
+                    ]
+                };
+
+                var newrecoveries = {
+                    title: {
+                        text: "Total Confirmed Recoveries"              
+                    },
+                    animationEnabled: false,
+                    parsing: false,
+                    data: [              
+                        {
+                            type: $("#graphType").val(),
+                            dataPoints: selNewRecoveries
+                        }
+                    ]
+                };
+
+                $("#casesChart").CanvasJSChart(newcases);
+                $("#deathsChart").CanvasJSChart(newdeaths);
+                $("#recoveriesChart").CanvasJSChart(newrecoveries);
+            }
+        </script>
+    </body>
+</html>
